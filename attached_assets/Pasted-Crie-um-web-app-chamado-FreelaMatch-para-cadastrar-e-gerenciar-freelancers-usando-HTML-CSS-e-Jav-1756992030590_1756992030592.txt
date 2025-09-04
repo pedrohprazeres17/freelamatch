@@ -1,0 +1,159 @@
+Crie um web app chamado “FreelaMatch” para cadastrar e gerenciar freelancers, usando HTML, CSS e JavaScript (fetch) no frontend e Airtable como backend.
+O app deve implementar Create + Read + Delete (obrigatório) e Update (PATCH) como bônus, com proxy para segurança dos segredos.
+
+1) Arquitetura & Stack
+
+Projeto com frontend (HTML/CSS/JS puro) e servidor Node/Express atuando como proxy seguro para a API do Airtable.
+
+O servidor deve expor rotas REST:
+
+GET /api/freelancers (listar)
+
+POST /api/freelancers (criar)
+
+PATCH /api/freelancers/:id (editar – bônus)
+
+DELETE /api/freelancers/:id (excluir)
+
+O frontend é servido pela pasta pública e consome somente as rotas /api/* (nunca chama o Airtable direto).
+
+2) Dados (Airtable)
+
+Base: FreelaMatch (ou DBX_FreelaMatch)
+
+Tabela: Freelancers
+
+Campos (use exatamente esses nomes minúsculos):
+
+nome (string, obrigatório)
+
+servico (string, obrigatório – ex.: Design, Programação, Marketing)
+
+email (string, validar formato)
+
+preco_hora (number)
+
+localizacao (string curta, ex.: “Curitiba – PR”)
+
+foto (string – URL opcional)
+
+No proxy, normalizar os registros do Airtable para { id, nome, servico, email, preco_hora, localizacao, foto }.
+
+3) Segurança (Replit Secrets)
+
+NÃO deixar token no frontend.
+
+Ler as variáveis somente no servidor:
+
+AIRTABLE_TOKEN → PAT do Airtable
+
+AIRTABLE_BASE_ID → ID da base
+
+AIRTABLE_TABLE → Freelancers
+
+Enviar ao Airtable com headers:
+
+Authorization: Bearer ${AIRTABLE_TOKEN}
+
+Content-Type: application/json
+
+4) Regras das Rotas do Proxy
+
+GET /api/freelancers
+
+Chamar GET https://api.airtable.com/v0/${BASE_ID}/${TABLE}
+
+Suportar pageSize=50 por padrão, ordenar por createdTime desc.
+
+Responder { ok:true, list:[…], offset? }.
+
+POST /api/freelancers
+
+Recebe { nome, servico, email, preco_hora, localizacao, foto }.
+
+Validar nome e servico.
+
+Criar no Airtable e devolver { ok:true, item }.
+
+PATCH /api/freelancers/:id (bônus)
+
+Atualiza apenas os campos enviados. Devolver { ok:true, item }.
+
+DELETE /api/freelancers/:id
+
+Excluir pelo id. Devolver { ok:true, deleted:id }.
+
+Tratar erros com { ok:false, error:"mensagem" } e status HTTP adequados.
+
+5) UI/UX (Frontend)
+
+Tema: fundo off-white #FAFAF7, cartões brancos, gradiente pôr-do-sol nos destaques (laranja → âmbar → dourado).
+
+Header: título “FreelaMatch – Conecte-se com freelancers” + subtítulo curto.
+
+Formulário (Create): campos citados acima; validação mínima; ao enviar, criar e atualizar lista sem recarregar; limpar e focar no primeiro campo.
+
+Lista (Read): renderizar cards responsivos (grid), cada card com:
+
+Foto (ou placeholder), nome, serviço (badge), email (mailto), localização, preço/hora (BRL).
+
+Botões: Editar (🖊️ – abre modal, salva via PATCH) e Excluir (🗑️ – abre modal, confirma e chama DELETE).
+
+Estados visuais:
+
+Carregando: spinner/skeleton;
+
+Vazio: mensagem “Nenhum freelancer cadastrado ainda.”;
+
+Erro: toast/banner vermelho com mensagem da API.
+
+Acessibilidade & UX: foco visível, botões com hover, modais com Esc e clique-fora para fechar, feedbacks de sucesso/erro.
+
+Microinterações: hover nos cards (elevação + borda Sunset), botões principais com glow suave.
+
+6) Organização do Frontend
+
+Estado local: array freelancers como fonte da verdade.
+
+Re-renderizar sempre a partir do estado.
+
+Funções claras:
+
+loadFreelancers() (GET)
+
+submitCreate() (POST)
+
+openEdit(item) / submitEdit(id) (PATCH – bônus)
+
+confirmDelete(id) / doDelete(id) (DELETE)
+
+renderFreelancers(list) + utilitários (moneyBRL, showLoading, showError, showEmpty, openModal/closeModal)
+
+7) Critérios de Aceitação (checklist do professor)
+
+✅ Read (GET) lista da nuvem exibida em cards.
+
+✅ Create (POST) via formulário com validação.
+
+✅ Delete (DELETE) por item com confirmação no modal (não usar confirm nativo).
+
+✅ Estados: carregando / erro / vazio.
+
+✅ Código organizado (funções, comentários curtos).
+
+✅ Segurança: token em Secrets e uso somente no servidor (proxy).
+
+⭐ Bônus: Update (PATCH) em modal, busca por nome/serviço e/ou paginação (pageSize).
+
+8) Publicação & README
+
+Incluir um README com:
+
+Variáveis de ambiente necessárias (AIRTABLE_TOKEN, AIRTABLE_BASE_ID, AIRTABLE_TABLE).
+
+Como rodar no Replit (rodar o servidor e acessar a URL pública).
+
+Diagrama de sequência simples:
+“Usuário → Front (fetch /api) → Proxy Express → API Airtable → Resposta JSON → Render DOM”.
+
+Nota sobre segurança: token fica no servidor; se algum dia usar só frontend, documentar os riscos e limitar escopo do PAT.
